@@ -9,6 +9,7 @@ import javax.swing.JButton;
 import javax.swing.JTextArea;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.awt.event.ActionEvent;
@@ -23,6 +24,8 @@ public class ClientChat extends JFrame {
 	private JTextArea textAreaChat; 
 	private Socket socket;
 	private ServerThread serverThread;
+	private PrintStream socOut;
+	private String name;
 
 	/**
 	 * Launch the application.
@@ -54,12 +57,42 @@ public class ClientChat extends JFrame {
 		textFieldConnect.setColumns(10);
 		
 		JButton btnConnect = new JButton("Connect");
+		btnConnect.setBounds(195, 10, 89, 30);
+		getContentPane().add(btnConnect);
+		
+		JButton btnDisconnect = new JButton("Disconnect");
+		btnDisconnect.setBounds(294, 10, 89, 30);
+		getContentPane().add(btnDisconnect);
+		btnDisconnect.setEnabled(false);
+		
+		textAreaChat = new JTextArea();
+		JScrollPane sp = new JScrollPane(textAreaChat);
+		sp.setBounds(10, 51, 373, 274);
+		getContentPane().add(sp);
+		textAreaChat.setEnabled(false);
+		
+		textFieldSend = new JTextField();
+		textFieldSend.setColumns(10);
+		textFieldSend.setBounds(10, 336, 274, 29);
+		getContentPane().add(textFieldSend);
+		textFieldSend.setEnabled(false);
+		
+		JButton btnSend = new JButton("Send");
+		btnSend.setBounds(294, 336, 89, 30);
+		getContentPane().add(btnSend);
+		btnSend.setEnabled(false);
+		
 		btnConnect.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String name = textFieldConnect.getText();
-				System.out.println(name);
+				name = textFieldConnect.getText();
 				try {
 					clientConnect(name);
+					textFieldConnect.setEnabled(false);
+					btnConnect.setEnabled(false);
+					textAreaChat.setEnabled(true);
+					textFieldSend.setEnabled(true);
+					btnDisconnect.setEnabled(true);
+					btnSend.setEnabled(true);
 				} catch (UnknownHostException e1) {
 		            e1.printStackTrace();
 				} catch (IOException e1) {
@@ -67,31 +100,21 @@ public class ClientChat extends JFrame {
 				}
 			}
 		});
-		btnConnect.setBounds(195, 10, 89, 30);
-		getContentPane().add(btnConnect);
 		
-		JButton btnDisconnect = new JButton("Disconnect");
 		btnDisconnect.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				String name = textFieldConnect.getText();
+				
 				clientDisconnect(name);
+				textFieldConnect.setEnabled(true);
+				btnConnect.setEnabled(true);
+				textAreaChat.setEnabled(false);
+				textFieldSend.setEnabled(false);
+				btnDisconnect.setEnabled(false);
+				btnSend.setEnabled(false);
 
 			}
 		});
-		btnDisconnect.setBounds(294, 10, 89, 30);
-		getContentPane().add(btnDisconnect);
 		
-		textAreaChat = new JTextArea();
-		JScrollPane sp = new JScrollPane(textAreaChat);
-		sp.setBounds(10, 51, 373, 274);
-		getContentPane().add(sp);
-		
-		textFieldSend = new JTextField();
-		textFieldSend.setColumns(10);
-		textFieldSend.setBounds(10, 336, 274, 29);
-		getContentPane().add(textFieldSend);
-		
-		JButton btnSend = new JButton("Send");
 		btnSend.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String message = textFieldSend.getText();
@@ -100,36 +123,45 @@ public class ClientChat extends JFrame {
 				textFieldSend.setText("");
 			}
 		});
-		btnSend.setBounds(294, 336, 89, 30);
-		getContentPane().add(btnSend);
 
 	}
 	
 	private synchronized void clientConnect(String userName) throws UnknownHostException, IOException {
 		socket=new Socket("localhost",1234);
-		serverThread=new ServerThread(socket,userName,this);
+		socOut = new PrintStream(socket.getOutputStream());
+		serverThread=new ServerThread(socket,userName,this,socOut);
 		serverThread.start();
-		serverThread.addNextMessage(userName+" joined the group chat");
+		socOut.println(name +" [ joined the group chat ]");
 	}
 	
 	public void onReceiveMessage(String message) {
 		textAreaChat.append(message + "\n");
 	}
 	
-	private synchronized void clientDisconnect(String userName)  {
+	private synchronized void clientDisconnect(String name)  {
 		if (socket != null) {
+			socOut.println(name +" [ leaved the group chat ]");
 			try {
-				serverThread.addNextMessage(userName+"leaved the group chat");
 				socket.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+
 		}
 	}
 	
 	public synchronized void send(String message) {
 		if (socket != null) {
-			serverThread.addNextMessage(message);
+			if(message!=null) {
+				serverThread.addNextMessage(message);
+			}
+			else {
+				try {
+					ServerThread.sleep(200);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 }

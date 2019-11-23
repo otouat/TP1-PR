@@ -15,12 +15,14 @@ public class ServerThread extends Thread {
 	private final LinkedList<String> messages;
 	private boolean haveMessage=false;
 	ClientChat clientChat;
+	PrintStream socOut;
 	
-	public ServerThread(Socket socket, String userName,ClientChat clientChat) {
+	public ServerThread(Socket socket, String userName,ClientChat clientChat, PrintStream socOut) {
 		this.echoSocket=socket;
 		this.userName=userName;
 		this.messages=new LinkedList<String>();
 		this.clientChat=clientChat;
+		this.socOut=socOut;
 	}
 	
 	public void addNextMessage(String message) {
@@ -57,6 +59,7 @@ public class ServerThread extends Thread {
 					}
 					socOut.println(userName+" > "+nextSend);	
 					socOut.flush();
+
 				}
 			}
 		} catch (IOException e) {
@@ -65,6 +68,8 @@ public class ServerThread extends Thread {
 			e.printStackTrace();
 			System.exit(1);
 		}
+		
+		
     	
     }
 
