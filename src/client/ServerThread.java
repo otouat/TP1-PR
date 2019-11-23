@@ -14,37 +14,39 @@ public class ServerThread extends Thread {
 	private String userName;
 	private final LinkedList<String> messages;
 	private boolean haveMessage=false;
+	ClientChat clientChat;
 	
-	public ServerThread(Socket socket, String userName) {
+	public ServerThread(Socket socket, String userName,ClientChat clientChat) {
 		this.echoSocket=socket;
 		this.userName=userName;
-		messages=new LinkedList<String>();
+		this.messages=new LinkedList<String>();
+		this.clientChat=clientChat;
 	}
 	
 	public void addNextMessage(String message) {
 		synchronized(messages) {
 			haveMessage=true;
 			messages.push(message);
-		}
+		}	
+		
 	}
 
 	
 	public void run() {
-    	System.out.println("Bienvenue :"+userName);
-    	System.out.println("Serveur = " + echoSocket.getRemoteSocketAddress());
+		clientChat.onReceiveMessage("Bienvenue :"+userName);
+		clientChat.onReceiveMessage("Serveur = " + echoSocket.getRemoteSocketAddress());
 		
 		
 		try {
     		PrintStream socOut = new PrintStream(echoSocket.getOutputStream());
     		InputStream socIn = echoSocket.getInputStream();
     		BufferedReader socInB = new BufferedReader(new InputStreamReader(socIn));
-    		BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
 			
 			while(!echoSocket.isClosed()) {
 				if(socIn.available()>0) {
 					String input= socInB.readLine();
 					if(input!=null) {
-						System.out.println(input);
+						clientChat.onReceiveMessage(input);
 					}
 				}
 				if(haveMessage) {

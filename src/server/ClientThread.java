@@ -32,7 +32,6 @@ public class ClientThread
 
 			while (!clientSocket.isClosed()) {
 				String line = socIn.readLine();
-				System.out.println(line);
 				if (line != null) {
 					for (ClientThread client : echoServerMultiThreaded.getClients()) {
 						PrintStream clientOut = client.getSocOut();

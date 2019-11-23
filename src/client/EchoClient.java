@@ -21,15 +21,19 @@ public class EchoClient {
 	
 	private static final String hostName="localhost";
 	private static final int portNumber=1234;
+	private static BufferedReader stdIn;
 	private String userName;
 	private String host;
 	private int port;
 	
-	
+	/*
+	 * try { ChatClient frame = new ChatClient(); frame.setVisible(true); } catch
+	 * (Exception e) { e.printStackTrace(); }
+	 */
     
     public static void main(String[] args) throws IOException, InterruptedException {
     	String read;
-    	BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+    	stdIn = new BufferedReader(new InputStreamReader(System.in));
     	System.out.println("Please input username :");
     	read=stdIn.readLine();
     	
@@ -48,7 +52,6 @@ public class EchoClient {
 	
 	private void startClient() throws InterruptedException {
 		try {
-    		BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
 			Socket socket=new Socket(host,port);
 			ServerThread serverThread=new ServerThread(socket,userName);
 			serverThread.start();
