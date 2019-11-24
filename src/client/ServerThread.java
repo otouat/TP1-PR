@@ -8,6 +8,8 @@ import java.io.PrintStream;
 import java.net.Socket;
 import java.util.LinkedList;
 
+import server.SaveMessage;
+
 public class ServerThread extends Thread {
     
 	private Socket echoSocket;
@@ -35,9 +37,15 @@ public class ServerThread extends Thread {
 
 	
 	public void run() {
-		clientChat.onReceiveMessage("Bienvenue :"+userName);
-		clientChat.onReceiveMessage("Serveur = " + echoSocket.getRemoteSocketAddress());
-		
+		clientChat.onReceiveMessage("Bienvenue :"+userName+"\n");
+		clientChat.onReceiveMessage("Serveur = " + echoSocket.getRemoteSocketAddress()+"\n");
+		try {
+			clientChat.onReceiveMessage(SaveMessage.readAllMessages());
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		socOut.println(userName +" [ joined the group chat ]");
 		
 		try {
     		PrintStream socOut = new PrintStream(echoSocket.getOutputStream());
@@ -48,7 +56,7 @@ public class ServerThread extends Thread {
 				if(socIn.available()>0) {
 					String input= socInB.readLine();
 					if(input!=null) {
-						clientChat.onReceiveMessage(input);
+						clientChat.onReceiveMessage(input+ "\n");
 					}
 				}
 				if(haveMessage) {

@@ -29,7 +29,6 @@ public class ClientThread
 
 			socIn = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
 			socOut = new PrintStream(clientSocket.getOutputStream());
-			socOut.println(SaveMessage.readAllMessages());
 			while (!clientSocket.isClosed()) {
 				String line = socIn.readLine();
 				SaveMessage.writeSingleMessage(line);

@@ -1,4 +1,4 @@
-package client;
+package multicast;
 
 import java.awt.EventQueue;
 
@@ -10,11 +10,14 @@ import javax.swing.JTextArea;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.MulticastSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.awt.event.ActionEvent;
 
-public class ClientChat extends JFrame {
+public class ClientChatMulticast extends JFrame {
 	/**
 	 * 
 	 */
@@ -22,10 +25,11 @@ public class ClientChat extends JFrame {
 	private JTextField textFieldConnect;
 	private JTextField textFieldSend;
 	private JTextArea textAreaChat; 
-	private Socket socket;
-	private ServerThread serverThread;
-	private PrintStream socOut;
+	private MulticastSocket multicastSocket;
+	private ClientThreadMulticast clientThreadMulticast;
 	private String name;
+	private InetAddress groupAddr;
+	private int groupPort;
 
 	/**
 	 * Launch the application.
@@ -34,7 +38,7 @@ public class ClientChat extends JFrame {
 		EventQueue.invokeLater(new Runnable() {
 			public void run() {
 				try {
-					ClientChat frame = new ClientChat();
+					ClientChatMulticast frame = new ClientChatMulticast();
 					frame.setVisible(true);
 				} catch (Exception e) {
 					e.printStackTrace();
@@ -46,7 +50,7 @@ public class ClientChat extends JFrame {
 	/**
 	 * Create the frame.
 	 */
-	public ClientChat() {
+	public ClientChatMulticast() {
 		setBounds(100, 100, 405, 412);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		getContentPane().setLayout(null);
@@ -127,11 +131,19 @@ public class ClientChat extends JFrame {
 	}
 	
 	private synchronized void clientConnect(String userName) throws UnknownHostException, IOException {
-		socket=new Socket("localhost",1234);
-		socOut = new PrintStream(socket.getOutputStream());
-		serverThread=new ServerThread(socket,userName,this,socOut);
-		serverThread.start();
-		
+		groupAddr=InetAddress.getByName("224.0.0.1");
+		groupPort=50000;
+		multicastSocket=new MulticastSocket(groupPort);
+		multicastSocket.joinGroup(groupAddr);
+		clientThreadMulticast=new ClientThreadMulticast(multicastSocket,userName,this);
+		clientThreadMulticast.start();
+		String connectMessage=name +" [ joined the group chat ]"+ "\n";
+		DatagramPacket hi = new DatagramPacket(connectMessage.getBytes(),connectMessage.length(), groupAddr, groupPort);
+		try {
+			multicastSocket.send(hi);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void onReceiveMessage(String message) {
@@ -139,29 +151,36 @@ public class ClientChat extends JFrame {
 	}
 	
 	private synchronized void clientDisconnect(String name)  {
-		if (socket != null) {
-			socOut.println(name +" [ leaved the group chat ]"+ "\n");
+		try {
+			String disconnectMessage=name +" [ leaved the group chat ]"+ "\n";
+			DatagramPacket hi = new DatagramPacket(disconnectMessage.getBytes(),disconnectMessage.length(), groupAddr, groupPort);
 			try {
-				socket.close();
+				multicastSocket.send(hi);
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-
+			multicastSocket.leaveGroup(groupAddr);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
 	public synchronized void send(String message) {
-		if (socket != null) {
-			if(message!=null) {
-				serverThread.addNextMessage(message);
-			}
-			else {
-				try {
-					ServerThread.sleep(200);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
+		String msg=name+" > "+message+"\n";
+		DatagramPacket hi = new DatagramPacket(msg.getBytes(),msg.length(), groupAddr, groupPort);
+		try {
+			multicastSocket.send(hi);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
+
+	public InetAddress getGroupAddr() {
+		return groupAddr;
+	}
+
+	public int getGroupPort() {
+		return groupPort;
+	}
+
 }
