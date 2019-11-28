@@ -51,11 +51,13 @@ public class ClientChatMulticast extends JFrame {
 	 * Create the frame.
 	 */
 	public ClientChatMulticast() {
+		setTitle("Chat Client (multicast-based)");
 		setBounds(100, 100, 405, 412);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		getContentPane().setLayout(null);
 		
 		textFieldConnect = new JTextField();
+		textFieldConnect.setToolTipText("Username");
 		textFieldConnect.setBounds(10, 11, 175, 29);
 		getContentPane().add(textFieldConnect);
 		textFieldConnect.setColumns(10);
@@ -76,6 +78,7 @@ public class ClientChatMulticast extends JFrame {
 		textAreaChat.setEnabled(false);
 		
 		textFieldSend = new JTextField();
+		textFieldSend.setToolTipText("Input your message here");
 		textFieldSend.setColumns(10);
 		textFieldSend.setBounds(10, 336, 274, 29);
 		getContentPane().add(textFieldSend);
